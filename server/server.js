@@ -35,7 +35,7 @@ boot(app, __dirname, function(err) {
 
 
 //.find = SELECT
-app.models.user.find((err, result) => {
+/*app.models.user.find((err, result) => {
   if(result.length === 0){
     const user = {
       email: "yannis@yannis.com",
@@ -46,7 +46,7 @@ app.models.user.find((err, result) => {
       console.log("Tried to create user ",err, result)
     })
   }
-})
+})*/
 
 /* User Post / Users 
 data : 
@@ -71,4 +71,4 @@ app.models.user.afterRemote('create', (ctx, user, next) => {
     }
   })
   next()
-})
+}) 
