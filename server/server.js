@@ -34,29 +34,36 @@ boot(app, __dirname, function(err) {
 });
 
 
-//.find = SELECT
-/*app.models.user.find((err, result) => {
-  if(result.length === 0){
-    const user = {
-      email: "yannis@yannis.com",
-      password: "test",
-      username: "yannis"
-    }
-    app.models.user.create(user, (err, result) => {
-      console.log("Tried to create user ",err, result)
-    })
-  }
-})*/
+//create all users
 
-/* User Post / Users 
-data : 
-  { 
-    "email":"yannis@test.fr",
-    "password":"test", 
-    "username":"yannis"
-  }
-after create a new user, i log the new user with his datas
-  */
+var dbUsers = [
+  {emai:"admin@website.com", password:"admin", name:"admin"},
+  {emai:"editor@website.com", password:"editor", name:"editor"}
+]
+
+dbUsers.map((user) => {
+  app.models.user.create(user,(err, result) => {
+    if(!err && result){
+        console.log(result," is created")
+        // create profiles
+        app.models.Profile.create({
+          first_name: result.name,
+          create_at: new Date(),
+          userId: result.id
+        }, (profileErr, profile) => {
+          if(!profileErr && profile){
+            console.log("Profile created for : ",profile)
+          }else{
+            console.log("Error create profile for : ",profileErr)
+          }
+        })
+    }else{
+      console.log("create user error : ",err)
+    }
+  })
+})
+
+/*
 app.models.user.afterRemote('create', (ctx, user, next) => {
   console.log("New user is ", user)
   app.models.Profile.create({
@@ -67,8 +74,48 @@ app.models.user.afterRemote('create', (ctx, user, next) => {
     if(!err && result){
       console.log("Created new Profile! ", result)
     }else{
-      console.log("There is an error ")
+      console.log("There is an error ", err)
     }
   })
   next()
 }) 
+*/
+
+//create admin role
+app.models.Role.find({where:{ name:"admin"}}, (err, role) => {
+  if(!err && role){
+    console.log("No error, role is ",role)
+    if(role.length === 0){
+      app.models.Role.create({
+        name: "admin",
+      }, (errRole, result) => {
+        if(!errRole && result){
+          app.models.user.findOne((userErr, user) => {
+            if(!userErr && user){
+              result.principals.create({
+                principalType: app.models.RoleMapping.USER,
+                principalId: user.id
+              }, (errPrincipal, principal) => {
+                console.log("Created principal ",errPrincipal, principal)
+              })
+            }
+          })
+        }
+      })
+    }
+  }
+})
+
+//create editor role
+app.models.Role.find({where: {name:"editor"}}, (err, role) => {
+  if(!err && role){
+    console.log("No error, role is ",role)
+    if(role.length === 0){
+      app.models.Role.create({
+        name: "editor"
+      },(creationErr, result) => {
+        console.log(creationErr, result)
+      })
+    }
+  }
+})
