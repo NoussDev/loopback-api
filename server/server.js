@@ -10,9 +10,9 @@ const boot = require('loopback-boot');
 
 const app = module.exports = loopback();
 
-app.start = function() {
+app.start = function () {
   // start the web server
-  return app.listen(function() {
+  return app.listen(function () {
     app.emit('started');
     const baseUrl = app.get('url').replace(/\/$/, '');
     console.log('Web server listening at: %s', baseUrl);
@@ -25,7 +25,7 @@ app.start = function() {
 
 // Bootstrap the application, configure models, datasources and middleware.
 // Sub-apps like REST API are mounted via boot scripts.
-boot(app, __dirname, function(err) {
+boot(app, __dirname, function (err) {
   if (err) throw err;
 
   // start the server if `$ node server.js`
@@ -37,30 +37,42 @@ boot(app, __dirname, function(err) {
 //create all users
 
 var dbUsers = [
-  {emai:"admin@website.com", password:"admin", name:"admin"},
-  {emai:"editor@website.com", password:"editor", name:"editor"}
+  { email: "admin@website.com", password: "admin", name: "admin" },
+  { email: "editor@website.com", password: "editor", name: "editor" }
 ]
 
-dbUsers.map((user) => {
-  app.models.user.create(user,(err, result) => {
-    if(!err && result){
-        console.log(result," is created")
-        // create profiles
-        app.models.Profile.create({
-          first_name: result.name,
-          create_at: new Date(),
-          userId: result.id
-        }, (profileErr, profile) => {
-          if(!profileErr && profile){
-            console.log("Profile created for : ",profile)
-          }else{
-            console.log("Error create profile for : ",profileErr)
-          }
-        })
-    }else{
-      console.log("create user error : ",err)
-    }
-  })
+
+app.models.user.find({
+  where: {
+    or:[
+      {email: "admin@website.com"}, 
+      {email: "editor@website.com"}
+    ]
+  }}, (errFindUser, findUser) => {
+  console.log("Find ? ", errFindUser, findUser)
+  if (!errFindUser && findUser.length === 0) {
+    dbUsers.map((user) => {
+      app.models.user.create(user, (err, result) => {
+        if (!err && result) {
+          console.log(result, " is created")
+          // create profiles
+          app.models.Profile.create({
+            first_name: result.name,
+            create_at: new Date(),
+            userId: result.id
+          }, (profileErr, profile) => {
+            if (!profileErr && profile) {
+              console.log("Profile created for : ", profile)
+            } else {
+              console.log("Error create profile for : ", profileErr)
+            }
+          })
+        } else {
+          console.log("create user error : ", err)
+        }
+      })
+    })
+  }
 })
 
 /*
@@ -82,21 +94,21 @@ app.models.user.afterRemote('create', (ctx, user, next) => {
 */
 
 //create admin role
-app.models.Role.find({where:{ name:"admin"}}, (err, role) => {
-  if(!err && role){
-    console.log("No error, role is ",role)
-    if(role.length === 0){
+app.models.Role.find({ where: { name: "admin" } }, (err, role) => {
+  if (!err && role) {
+    console.log("No error, role is ", role)
+    if (role.length === 0) {
       app.models.Role.create({
         name: "admin",
       }, (errRole, result) => {
-        if(!errRole && result){
+        if (!errRole && result) {
           app.models.user.findOne((userErr, user) => {
-            if(!userErr && user){
+            if (!userErr && user) {
               result.principals.create({
                 principalType: app.models.RoleMapping.USER,
                 principalId: user.id
               }, (errPrincipal, principal) => {
-                console.log("Created principal ",errPrincipal, principal)
+                console.log("Created principal ", errPrincipal, principal)
               })
             }
           })
@@ -107,13 +119,13 @@ app.models.Role.find({where:{ name:"admin"}}, (err, role) => {
 })
 
 //create editor role
-app.models.Role.find({where: {name:"editor"}}, (err, role) => {
-  if(!err && role){
-    console.log("No error, role is ",role)
-    if(role.length === 0){
+app.models.Role.find({ where: { name: "editor" } }, (err, role) => {
+  if (!err && role) {
+    console.log("No error, role is ", role)
+    if (role.length === 0) {
       app.models.Role.create({
         name: "editor"
-      },(creationErr, result) => {
+      }, (creationErr, result) => {
         console.log(creationErr, result)
       })
     }
